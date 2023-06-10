@@ -6,9 +6,20 @@
         <div class="ui segment">
           <div class="ui grid">
             <div class="field thirteen wide column">
-              <div class="ui icon right input large" :class="{loading:spinner}">
-                <input type="text" placeholder="Please enter your location" v-model="address" />
-                <i class="link icon map marker alternate teal" @click="getUserLocation" ></i>  
+              <div
+                class="ui icon right input large"
+                :class="{ loading: spinner }"
+              >
+                <input
+                  type="text"
+                  placeholder="Please enter your location"
+                  v-model="address"
+                  id="autoComplete"
+                />
+                <i
+                  class="link icon map marker alternate teal"
+                  @click="getUserLocation"
+                ></i>
               </div>
             </div>
             <div class="three wide column">
@@ -19,35 +30,55 @@
       </form>
     </div>
   </section>
+
+  <section class="ui two column centered grid" >
+    <div id="map"></div>
+  </section>
 </template>
+
 
 <script>
 import axios from "axios";
+import "@/pages/UserLocation.css";
 
 export default {
-    data() {
-      return {
-        address: "",
-        error: "",
-        spinner: false
-      };
-    },
+  data() {
+    return {
+      address: "",
+      error: "",
+      spinner: false
+    };
+  },
+  mounted() {
+    new google.maps.places.Autocomplete(
+      document.getElementById("autoComplete"),
+      {
+        bounds: new google.maps.LatLngBounds(
+          new google.maps.LatLng(43.751007, -79.290437)
+        )
+      }
+    );
+  },
+
   methods: {
     getUserLocation() {
       this.spinner = true;
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-          this.getCurrentLocation(
-            position.coords.latitude,
-            position.coords.longitude
-          );
-        },
-        error => {
-          if(error.message.includes("denied")){
-            this.spinner = false;
-            this.error = "Permission is denied to get the current location. Pleae type the location."
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            this.getCurrentLocation(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+          },
+          error => {
+            if (error.message.includes("denied")) {
+              this.spinner = false;
+              this.error =
+                "Permission is denied to get the current location. Pleae type the location.";
+            }
           }
-        });
+        );
       } else {
         this.spinner = false;
         this.error = "Your browser does not support getting current location";
