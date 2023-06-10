@@ -3,9 +3,17 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import * as VueGoogleMaps from 'vue2-google-maps'
+import VueGeoLocation from 'vue-browser-geolocation'
 
 Vue.config.productionTip = false
-
+Vue.use(VueGoogleMaps,{
+  load: {
+    key: process.env.VUE_APP_GEO_API_KEY,
+    libraries: "places"
+  }
+})
+Vue.use(VueGeoLocation)
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

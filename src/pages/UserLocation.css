@@ -15,3 +15,13 @@
 .pac-item-query{
     font-size:16px;
 }
+
+#map {
+    width: 50%;
+    height: 700px;
+}
+
+#table{
+    width: 50%;
+    height: 700px;
+}
