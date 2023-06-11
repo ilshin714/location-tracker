@@ -34,7 +34,6 @@
         </form>
       </div>
     </section>
-
     <section class="ui two column centered grid">
       <GmapMap id="map" class="column" :center="center" :zoom="14">
         <GmapMarker
@@ -43,8 +42,33 @@
           :position="m.position"
         ></GmapMarker>
       </GmapMap>
-      <div id="table" class="column teal" v-show="places.length > 0">
-        {{ places }}
+      <div id="table" class="column" v-show="places.length > 0">
+        <div class="ui grid">
+          <div class="four column row">
+            <div class="left floated column">
+              <h1 class="">Location Table</h1>
+            </div>
+            <div class="right floated column">
+              <button
+                class="ui button large right floated black"
+                @click="deleteData"
+              >
+                DELETE ALL
+              </button>
+            </div>
+          </div>
+        </div>
+        <Pagination
+          :totalRecords="tableData.length"
+          :perPageOption="10"
+          v-model="pagination"
+        />
+        <Table
+          v-if="tableData.length > 0"
+          :theData="computedTableData"
+          :config="config"
+        />
+        <div class="ui clearing divider"></div>   
       </div>
     </section>
   </div>
@@ -52,9 +76,14 @@
 
 <script>
 import "@/pages/UserLocation.css";
-import axios from "axios";
+import Table from "../components/Table";
+import Pagination from "../components/Pagination";
 
 export default {
+  components: {
+    Table,
+    Pagination
+  },
   data() {
     return {
       center: { lat: 43.751007, lng: -79.290437 },
@@ -63,8 +92,39 @@ export default {
       spinner: false,
       currentPlace: null,
       markers: [],
-      places: []
+      places: [],
+      pagination: { page: 1, perPage: 10},
+      tableData: [],
+      config: [
+        {
+          key: "isChecked",
+          title: "Is Checked",
+          type: "checkbox"
+        },
+        {
+          key: "address",
+          title: "Address",
+          type: "text"
+        },
+        {
+          key: "lat",
+          title: "Latitude",
+          type: "text"
+        },
+        {
+          key: "lng",
+          title: "Longitude",
+          type: "text"
+        }
+      ]
     };
+  },
+  computed: {
+    computedTableData(){
+      const firstIndex = (this.pagination.page -1) * this.pagination.perPage;
+      const lastIndex = this.pagination.page * this.pagination.perPage;
+      return this.tableData.slice(firstIndex, lastIndex);
+    }
   },
   mounted() {},
   methods: {
@@ -80,10 +140,6 @@ export default {
     setPlace(place) {
       this.currentPlace = place;
       this.address = this.currentPlace.formatted_address;
-      this.center = {
-        lat: this.currentPlace.geometry.location.lat(),
-        lng: this.currentPlace.geometry.location.lng()
-      };
     },
     geolocate: function() {
       navigator.geolocation.getCurrentPosition(
@@ -116,11 +172,11 @@ export default {
         this.center = marker;
         this.places.push(this.currentPlace);
         this.markers.push({ position: marker });
-        this.currentPlace = null;
+        this.addTableData();
       }
     },
     getCurrentLocation(lat, lng) {
-      axios
+      this.$axios
         .get(
           "https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
             lat +
@@ -144,13 +200,31 @@ export default {
             this.center = marker;
             this.places.push(this.currentPlace);
             this.markers.push({ position: marker });
-            this.currentPlace = null;
+            this.addTableData();
           }
         })
         .catch(error => {
           this.spinner = false;
           this.error = error.error_message;
         });
+    },
+    addTableData() {
+      let newData = {
+        isChecked: false,
+        address: this.address,
+        lat: this.center.lat,
+        lng: this.center.lng
+      };
+      this.tableData.push(newData);
+      this.currentPlace = null;
+    },
+    deleteData() {
+      this.currentPlace = null;
+      this.markers = [];
+      this.places = [];
+      this.tableData = [];
+      this.address = "";
+      this.pagination.page = 1;
     }
   }
 };

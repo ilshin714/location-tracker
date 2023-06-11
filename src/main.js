@@ -5,7 +5,10 @@ import App from './App'
 import router from './router'
 import * as VueGoogleMaps from 'vue2-google-maps'
 import VueGeoLocation from 'vue-browser-geolocation'
+import axios from "axios";
 
+Vue.prototype.$axios = axios
+ 
 Vue.config.productionTip = false
 Vue.use(VueGoogleMaps,{
   load: {
