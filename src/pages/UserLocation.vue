@@ -36,15 +36,24 @@
     </section>
     <section class="ui two column centered grid">
       <GmapMap id="map" class="column" :center="center" :zoom="14">
+        <GmapInfoWindow
+          :options="infoOptions"
+          :position="infoPosition"
+          :opened="infoOpened"
+          :content="infoOptions.content"
+          @closeclick="infoOpened = false"
+        />
         <GmapMarker
           :key="index"
           v-for="(m, index) in markers"
           :position="m.position"
+          :clickable="true"
+          @click="toggleInfoWindow(m, index)"
         ></GmapMarker>
       </GmapMap>
       <div id="table" class="column" v-show="places.length > 0">
         <div class="ui grid">
-          <div class="four column row">
+          <div class="two column row">
             <div class="left floated column">
               <h1 class="">Location Table</h1>
             </div>
@@ -59,6 +68,7 @@
           </div>
         </div>
         <Pagination
+          :key="paginationKey"
           :totalRecords="tableData.length"
           :perPageOption="10"
           v-model="pagination"
@@ -68,7 +78,7 @@
           :theData="computedTableData"
           :config="config"
         />
-        <div class="ui clearing divider"></div>   
+        <div class="ui clearing divider"></div>
       </div>
     </section>
   </div>
@@ -93,7 +103,8 @@ export default {
       currentPlace: null,
       markers: [],
       places: [],
-      pagination: { page: 1, perPage: 10},
+      pagination: { page: 1, perPage: 10 },
+      paginationKey: 0,
       tableData: [],
       config: [
         {
@@ -116,12 +127,24 @@ export default {
           title: "Longitude",
           type: "text"
         }
-      ]
+      ],
+      infoPosition: null,
+      infoContent: null,
+      infoOpened: false,
+      infoCurrentKey: null,
+      currentMidx: null,
+      infoOptions: {
+        pixelOffset: {
+          width: 0,
+          height: -35
+        },
+        content: ""
+      }
     };
   },
   computed: {
-    computedTableData(){
-      const firstIndex = (this.pagination.page -1) * this.pagination.perPage;
+    computedTableData() {
+      const firstIndex = (this.pagination.page - 1) * this.pagination.perPage;
       const lastIndex = this.pagination.page * this.pagination.perPage;
       return this.tableData.slice(firstIndex, lastIndex);
     }
@@ -173,6 +196,9 @@ export default {
         this.places.push(this.currentPlace);
         this.markers.push({ position: marker });
         this.addTableData();
+        this.infoPosition = this.center;
+        this.infoOpened = true;
+        this.getTimeInformation();
       }
     },
     getCurrentLocation(lat, lng) {
@@ -201,6 +227,9 @@ export default {
             this.places.push(this.currentPlace);
             this.markers.push({ position: marker });
             this.addTableData();
+            this.infoPosition = this.center;
+            this.infoOpened = true;
+            this.getTimeInformation();
           }
         })
         .catch(error => {
@@ -224,7 +253,61 @@ export default {
       this.places = [];
       this.tableData = [];
       this.address = "";
-      this.pagination.page = 1;
+      this.paginationKey += 1;
+    },
+    getTimeInformation() {
+      let time = new Date();
+      let timeStamp = Math.round(new Date() / 1000);
+      this.$axios
+        .get(
+          "https://maps.googleapis.com/maps/api/timezone/json?location=" +
+            this.infoPosition.lat +
+            "," +
+            this.infoPosition.lng +
+            "&timestamp=" +
+            timeStamp +
+            //"&timestamp=1331161200" +
+            "&key=" +
+            process.env.VUE_APP_GEO_API_KEY
+        )
+        .then(response => {
+          if (response.data.error_message) {
+            this.spinner = false;
+            this.error = response.data.error_message;
+          } else {
+            this.spinner = false;
+
+            let localTime = new Date(
+              (timeStamp + response.data.dstOffset + response.data.rawOffset) *
+                1000
+            );
+            this.infoOptions.content =
+              "<p>" +
+              "Time Zone: " +
+              response.data.timeZoneName +
+              "</br>" +
+              "UTC Local Time: " +
+              localTime +
+              "</p>";
+
+            console.log(response.data);
+          }
+        })
+        .catch(error => {
+          this.spinner = false;
+          this.error = error.error_message;
+        });
+    },
+    toggleInfoWindow(marker, idx) {
+      this.infoPosition = marker.position;
+      this.getTimeInformation();
+
+      if (this.currentMidx == idx) {
+        this.infoOpened = !this.infoOpened;
+      } else {
+        this.infoOpened = true;
+        this.currentMidx = idx;
+      }
     }
   }
 };

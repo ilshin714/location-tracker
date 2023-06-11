@@ -8,7 +8,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(row, index) in theData" key="index">
+      <tr v-for="(row, index) in theData" :key="index">
         <td v-for="(obj, ind) in config" :key="ind">
           <span v-if="obj.type === 'text'"> {{ row[obj.key] }}</span>
           <span v-if="obj.type === 'checkbox'">
