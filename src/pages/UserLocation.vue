@@ -254,6 +254,7 @@ export default {
       this.tableData = [];
       this.address = "";
       this.paginationKey += 1;
+      this.infoOpened = false;
     },
     getTimeInformation() {
       let time = new Date();
